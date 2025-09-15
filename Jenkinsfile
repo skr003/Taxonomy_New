@@ -1,24 +1,27 @@
 pipeline {
-    agent { label 'forensic-agent' }
+  agent any
+  environment {
+    WORKSPACE_DIR = "${env.WORKSPACE}/forensic_workspace"
+    DB_PATH       = "${env.WORKSPACE}/forensic_workspace/metadata.db"
+    GRAFANA_FORENSIC_DIR = "/var/lib/grafana/forensic"
+    WORKSPACE_DIR = "/tmp/forensic_collection"
+    OUTPUT_FILE   = "/tmp/forensic_collection.json"
+    MONGO_URI = credentials('MONGODB_ATLAS_URI')
+    LOKI_URL  = credentials('LOKI_ENDPOINT')
+  }
 
-    environment {
-        WORKSPACE_DIR = "/tmp/forensic_collection"
-        OUTPUT_FILE   = "/tmp/forensic_collection.json"
-        MONGO_URI = credentials('MONGODB_ATLAS_URI')
-        LOKI_URL  = credentials('LOKI_ENDPOINT')
+  stages {
+    stage('Initialize') {
+      steps {
+        echo 'Preparing workspace...'
+        sh 'mkdir -p ${WORKSPACE_DIR}'
+        sh 'python3 scripts/initialize.py --workspace ${WORKSPACE_DIR}'
+      }
     }
-
-    stages {
-        stage('Initialize') {
-            steps {
-                sh 'mkdir -p ${WORKSPACE_DIR}'
-            }
-        }
-
         stage('Run Collector') {
             steps {
-                sh 'python3 ${WORKSPACE}/collector.py'
-            }
+                  sh 'mkdir -p ${WORKSPACE_DIR}'
+                  sh 'python3 scripts/initialize.py --workspace ${WORKSPACE_DIR}'            }
         }
 
         stage('Archive Results') {
