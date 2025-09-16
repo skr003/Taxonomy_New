@@ -27,7 +27,7 @@ pipeline {
                 withCredentials([string(credentialsId: 'remote-agent-ip', variable: 'TARGET_IP')]) {
                     sh '''
                         echo "[+] Running collector.py on remote..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "python3 /"
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "python3 /home/jenkins/forensic/collect_agent.py"
 
                         echo "[+] Finding archive on remote..."
                         REMOTE_ARCHIVE=$(ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "ls -t /tmp/logs_*.tar.gz | head -n1")
