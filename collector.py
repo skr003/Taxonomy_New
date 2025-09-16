@@ -6,7 +6,7 @@ import pwd
 import grp
 from datetime import datetime
 
-OUTPUT_FILE = "/tmp/forensic_collection.json"
+OUTPUT_FILE = "/home/jenkins/forensic/output/forensic_data.json"
 
 TARGET_PATHS = [
     "/var/log/", "/var/log/auth.log", "/var/log/secure", "/var/log/syslog",
