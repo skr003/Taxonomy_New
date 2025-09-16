@@ -4,30 +4,38 @@ pipeline {
         REMOTE_USER = "jenkins"
     }
     parameters {
-        credentials(name: 'TARGET_IP')
+        string(name: 'TARGET_IP', description: 'Enter the remote agent IP address')
     }
     stages {
-        stage('Collect Logs') {
+        stage('Copy Collector Script') {
             steps {
-                    sh '''
-                        REMOTE_IP=$(cat $REMOTE_AGENT_IP)
-                        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-                        ARCHIVE_NAME="logs_${REMOTE_IP}_$TIMESTAMP.tar.gz"
+                sh '''
+                    echo "[+] Copying collector.py to remote server..."
+                    scp -o StrictHostKeyChecking=no collector.py ${REMOTE_USER}@${TARGET_IP}:/tmp/collector.py
+                    ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "chmod +x /tmp/collector.py"
+                '''
+            }
+        }
+        stage('Run Collector on Remote') {
+            steps {
+                sh '''
+                    echo "[+] Running collector.py on remote..."
+                    ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "python3 /tmp/collector.py"
 
-                        echo "[+] Creating tarball on remote..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_IP} "tar -czf /tmp/$ARCHIVE_NAME /var/log"
+                    echo "[+] Finding archive on remote..."
+                    REMOTE_ARCHIVE=$(ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "ls -t /tmp/logs_*.tar.gz | head -n1")
 
-                        echo "[+] Copying back to Jenkins workspace..."
-                        scp -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_IP}:/tmp/$ARCHIVE_NAME .
+                    echo "[+] Copying archive back..."
+                    scp -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP}:$REMOTE_ARCHIVE .
 
-                        echo "[+] Cleaning up remote..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_IP} "rm -f /tmp/$ARCHIVE_NAME"
-                    '''
-                }
+                    echo "[+] Cleaning up remote..."
+                    ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${TARGET_IP} "rm -f $REMOTE_ARCHIVE /tmp/collector.py"
+                '''
+            }
         }
         stage('Archive Logs') {
             steps {
-                archiveArtifacts artifacts: '*.tar.gz', fingerprint: true
+                archiveArtifacts artifacts: 'logs_*.tar.gz', fingerprint: true
             }
         }
     }
