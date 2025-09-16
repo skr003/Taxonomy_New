@@ -9,7 +9,6 @@ pipeline {
     stages {
         stage('Collect Logs') {
             steps {
-             //   sshagent(credentials: ['jenkins-ssh-key']) {
                     sh '''
                         REMOTE_IP=$(cat $REMOTE_AGENT_IP)
                         TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -25,7 +24,6 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_IP} "rm -f /tmp/$ARCHIVE_NAME"
                     '''
                 }
-           // }
         }
         stage('Archive Logs') {
             steps {
